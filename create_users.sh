@@ -16,7 +16,7 @@ create_folders() {
 
     for folder in "${folders[@]}"; do
         path="/home/$1/$folder"
-        mkdir "$path"
+        mkdir -p "$path"
         chmod 700 "$path"
     done
     echo "Folders created"
