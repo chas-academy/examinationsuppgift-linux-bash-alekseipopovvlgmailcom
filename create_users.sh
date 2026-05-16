@@ -1,49 +1,87 @@
 #!/bin/bash
 
-if [ $UID -gt 0 ]; then
-    echo "Error: User is not eligible to run the script"
+# ==========================================
+# Script: create_users.sh
+# Description:
+# Creates users from arguments,
+# creates folders in home directory,
+# sets permissions,
+# and generates a welcome file.
+# ==========================================
+
+# ------------------------------------------
+# Check if script is run as root
+# UID 0 = root
+# ------------------------------------------
+if [ "$EUID" -ne 0 ]; then
+    echo "Error: This script must be run as root."
     exit 1
 fi
 
+# ------------------------------------------
+# Check if at least one username is provided
+# ------------------------------------------
 if [ $# -eq 0 ]; then
-    echo "No users provided"
+    echo "Usage: $0 username1 username2 ..."
     exit 1
 fi
 
-
-create_folders() {
-    folders=(Documents Downloads Work)
-
-    for folder in "${folders[@]}"; do
-        path="/home/$1/$folder"
-        mkdir "$path"
-        chmod 700 "$path"
-    done
-    echo "Folders created"
-}
-
-
-create_welcome_file() {
-    path="/home/$1/welcome.txt"
-    touch "$path"
-    echo "Välkommen $user" > "$path"
-}
-
-for user in "$@"; do
-    if id "$user" &>/dev/null ; then
-        echo "User: $user exists."
+# ------------------------------------------
+# Loop through all usernames
+# ------------------------------------------
+for USERNAME in "$@"
+do
+    # Check if user already exists
+    if id "$USERNAME" &>/dev/null; then
+        echo "User $USERNAME already exists. Skipping..."
         continue
     fi
 
-    echo "Creating user: $user"
+    echo "Creating user: $USERNAME"
 
-    home_dir="/home/$user"
+    # Create user with home directory
+    useradd -m "$USERNAME"
 
-    # create user with users directory
-    useradd -m "$user"
-    create_folders "$user"
-    create_welcome_file "$user"
+    # Set home directory path
+    HOME_DIR="/home/$USERNAME"
 
-    # set ownership
-    chown -R "$user:$user" "$home_dir"
+    # --------------------------------------
+    # Create directories
+    # --------------------------------------
+    mkdir -p "$HOME_DIR/Documents"
+    mkdir -p "$HOME_DIR/Downloads"
+    mkdir -p "$HOME_DIR/Work"
+
+    # --------------------------------------
+    # Set ownership
+    # --------------------------------------
+    chown -R "$USERNAME:$USERNAME" "$HOME_DIR"
+
+    # --------------------------------------
+    # Set permissions
+    # 700 = owner can read/write/execute only
+    # --------------------------------------
+    chmod 700 "$HOME_DIR/Documents"
+    chmod 700 "$HOME_DIR/Downloads"
+    chmod 700 "$HOME_DIR/Work"
+
+    # --------------------------------------
+    # Create welcome.txt
+    # --------------------------------------
+    WELCOME_FILE="$HOME_DIR/welcome.txt"
+
+    echo "Välkommen $USERNAME" > "$WELCOME_FILE"
+    echo "" >> "$WELCOME_FILE"
+    echo "Andra användare i systemet:" >> "$WELCOME_FILE"
+
+    # List all users from /etc/passwd
+    cut -d: -f1 /etc/passwd >> "$WELCOME_FILE"
+
+    # Set correct ownership and permissions
+    chown "$USERNAME:$USERNAME" "$WELCOME_FILE"
+    chmod 600 "$WELCOME_FILE"
+
+    echo "User $USERNAME created successfully."
 done
+
+echo "All tasks completed."
