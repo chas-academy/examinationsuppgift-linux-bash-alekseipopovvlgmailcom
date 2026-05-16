@@ -36,7 +36,7 @@ add_existing_users() {
         username=$(basename "$users")
 
         if [ "$username" != "$1" ]; then
-            echo -n "$username " >> "$path"
+            echo "$username " >> "$path"
         fi
     done
 }
