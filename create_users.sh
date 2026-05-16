@@ -29,6 +29,18 @@ create_welcome_file() {
     echo "Välkommen $user" > "$path"
 }
 
+add_existing_users() {
+    path="/home/$1/welcome.txt"
+
+    for users in /home/*; do
+        username=$(basename "$users")
+
+        if [ "$username" != "$1" ]; then
+            echo -n "$username " >> "$path"
+        fi
+    done
+}
+
 for user in "$@"; do
     if id "$user" &>/dev/null ; then
         echo "User: $user exists."
@@ -46,4 +58,10 @@ for user in "$@"; do
 
     # set ownership
     chown -R "$user:$user" "$home_dir"
+done
+
+# add all the user in the system to the welcolme.txt files
+# Runs att the end in order to add all the users
+for user in "$@"; do
+    add_existing_users "$user"
 done
