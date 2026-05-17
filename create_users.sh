@@ -32,7 +32,7 @@ create_welcome_file() {
 add_existing_users() {
     path="/home/$1/welcome.txt"
 
-    for users in /home/*; do
+    for users in $(cut -d: -f1 /etc/passwd); do
         username=$(basename "$users")
 
         if [ "$username" != "$1" ]; then
