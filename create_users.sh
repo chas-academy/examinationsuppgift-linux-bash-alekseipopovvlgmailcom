@@ -1,69 +1,57 @@
 #!/bin/bash
-
-if [ $UID -gt 0 ]; then
-    echo "Error: User is not eligible to run the script"
-    exit 1
-fi
-
-if [ $# -eq 0 ]; then
-    echo "No users provided"
-    exit 1
-fi
-
-
-create_folders() {
-    folders=(Documents Downloads Work)
-
-    for folder in "${folders[@]}"; do
-        path="/home/$1/$folder"
-        mkdir -p "$path"
-        chmod 700 "$path"
-    done
-    echo "Folders created"
-}
-
-
-create_welcome_file() {
-    path="/home/$1/welcome.txt"
-    touch "$path"
-    echo "Välkommen $1" > "$path"
-}
-
-add_existing_users() {
-    path="/home/$1/welcome.txt"
-
-    for users in $(cut -d: -f1 /etc/passwd); do
-        username=$(basename "$users")
-
-        if [ "$username" != "$1" ]; then
-            echo "$username " >> "$path"
-        fi
-    done
-}
-
-for user in "$@"; do
-    if id "$user" &>/dev/null ; then
-        echo "User: $user exists."
-        continue
-    fi
-
-    echo "Creating user: $user"
-
-    home_dir="/home/$user"
-
-    # create user with users directory
-    useradd -m "$user"
-    create_folders "$user"
-    create_welcome_file "$user"
-
-    # set ownership
-    chown -R "$user:$user" "$home_dir"
-done
-
-# add all the user in the system to the welcolme.txt files
-# Runs att the end in order to add all the users
-for user in "$@"; do
-    add_existing_users "$user"
-done
-
-exit 0
+ 
+ # Check root
+ if [ "$UID" -ne 0 ]; then
+     echo "Error: must be root"
+     exit 1
+ fi
+ 
+ # Check arguments
+ if [ "$#" -eq 0 ]; then
+     echo "No users provided"
+     exit 1
+ fi
+ 
+ create_folders() {
+     for folder in Documents Downloads Work; do
+         mkdir -p "/home/$1/$folder"
+         chmod 700 "/home/$1/$folder"
+     done
+ }
+ 
+ create_welcome_file() {
+     path="/home/$1/welcome.txt"
+     echo "Välkommen $1" > "$path"
+ }
+ 
+ add_existing_users() {
+     path="/home/$1/welcome.txt"
+ 
+     # safety
+     [ -f "$path" ] || touch "$path"
+ 
+     cut -d: -f1 /etc/passwd | while read users; do
+         if [ "$users" != "$1" ]; then
+             echo "$users" >> "$path"
+         fi
+     done
+ }
+ 
+ for user in "$@"; do
+     if id "$user" &>/dev/null; then
+         continue
+     fi
+ 
+     useradd -m "$user" || exit 1
+ 
+     create_folders "$user"
+     create_welcome_file "$user"
+ 
+     chown -R "$user:$user" "/home/$user"
+ done
+ 
+ for user in "$@"; do
+     add_existing_users "$user"
+ done
+ 
+ exit 0
