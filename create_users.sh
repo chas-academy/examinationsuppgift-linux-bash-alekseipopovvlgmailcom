@@ -29,17 +29,18 @@ create_welcome_file() {
     echo "Välkommen $1" > "$path"
 }
 
-add_existing_users() {
-    path="/home/$1/welcome.txt"
+ add_existing_users() {
+     path="/home/$1/welcome.txt"
 
-    for users in $(cut -d: -f1 /etc/passwd); do
-        username=$(basename "$users")
+     [ -f "$path" ] || touch "$path"
+ 
+     cut -d: -f1 /etc/passwd | while read users; do
+         if [ "$users" != "$1" ]; then
+             echo "$users" >> "$path"
+         fi
+     done
+ }
 
-        if [ "$username" != "$1" ]; then
-            echo "$username " >> "$path"
-        fi
-    done
-}
 
 for user in "$@"; do
     if id "$user" &>/dev/null ; then
