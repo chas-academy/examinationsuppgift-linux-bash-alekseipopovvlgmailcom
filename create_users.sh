@@ -1,7 +1,8 @@
 #!/bin/bash
 
+# check if the user is root
 if [ $UID -gt 0 ]; then
-    echo "Error: User is not eligible to run the script"
+    echo "Error: User is not eligible to run this script!"
     exit 1
 fi
 
@@ -16,8 +17,8 @@ create_folders() {
 
     for folder in "${folders[@]}"; do
         path="/home/$1/$folder"
-        mkdir -p "$path"
-        chmod 700 "$path"
+        mkdir "$path"
+        chmod "700" "$path"
     done
     echo "Folders created"
 }
@@ -26,20 +27,8 @@ create_folders() {
 create_welcome_file() {
     path="/home/$1/welcome.txt"
     touch "$path"
-    echo "Välkommen $1" > "$path"
+    echo "Välkommen $user" > "$path"
 }
-
- add_existing_users() {
-     path="/home/$1/welcome.txt"
-
-     [ -f "$path" ] || touch "$path"
- 
-     cut -d: -f1 /etc/passwd | while read users; do
-         if [ "$users" != "$1" ]; then
-             echo "$users" >> "$path"
-         fi
-     done
- }
 
 
 for user in "$@"; do
@@ -59,12 +48,6 @@ for user in "$@"; do
 
     # set ownership
     chown -R "$user:$user" "$home_dir"
-done
-
-# add all the user in the system to the welcolme.txt files
-# Runs att the end in order to add all the users
-for user in "$@"; do
-    add_existing_users "$user"
 done
 
 exit 0
