@@ -65,3 +65,5 @@ done
 for user in "$@"; do
     add_existing_users "$user"
 done
+
+exit 0
