@@ -26,7 +26,7 @@ create_folders() {
 create_welcome_file() {
     path="/home/$1/welcome.txt"
     touch "$path"
-    echo "Välkommen $user" > "$path"
+    echo "Välkommen $1" > "$path"
 }
 
 add_existing_users() {
