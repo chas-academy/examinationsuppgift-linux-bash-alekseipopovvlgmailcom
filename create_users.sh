@@ -24,11 +24,28 @@ create_folders() {
     echo "Folders created"
 }
 
+add_users_to_file() {
+    path="/home/$1/welcome.txt"
+    string=""
+
+    while IFS=: read -r user _ id _; do
+        if [ "$id" -ge 1000 ] && [ "$user" != "nobody" ] && [ "$user" != "$1" ]; then
+            string="$string $user"
+        fi
+    done < /etc/passwd
+
+    string="${string:1}"
+
+    echo "$string" >> "$path"
+}
+
 # takes username and creates welcome file with corresponding header
 create_welcome_file() {
     path="/home/$1/welcome.txt"
     touch "$path"
     echo "Välkommen $1" > "$path"
+    add_users_to_file "$1"
+    chmod 700 "$path"
 }
 
 for user in "$@"; do
@@ -40,13 +57,17 @@ for user in "$@"; do
     echo "Creating user: $user"
 
     home_dir="/home/$user"
-    #crete user with corrresponding directory
+    #crete user with corresponding directory
     useradd -m "$user"
     create_folders "$user"
-    create_welcome_file "$user"
 
     #set ownership
     chown -R "$user:$user" "$home_dir"
+done
+
+#create welcome  file with corresponding content 
+for user in "$@"; do
+    create_welcome_file "$user"
 done
 
 exit 0
